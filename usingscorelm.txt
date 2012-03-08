@@ -1,0 +1,8 @@
+
+How to score the sentences in the file SENTENCES-FILE (one sentence per line, tokenized, lowercased/truecased) against a language model:
+
+Using SRILM:
+ben@ben-ubuntu:~/working-dir/JohnDeere$ ngram -lm lm/JohnDeere_de_en_tmx14b.lm -debug 1 -ppl SENTENCES-FILE
+
+Using IRSTLM:
+ben@umactrans:~$ /home/build/mosesdecoder/irstlm/bin/score-lm -lm ~robert/working-dir/symc-baseline-en-de/lm/symc.lm.1 < SENTENCES-FILE
