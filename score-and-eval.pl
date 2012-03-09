@@ -38,18 +38,22 @@ foreach $file (@files) {
     open CORRECTEDFILE, "$file";
     open ORIGFILE, "$file.orig";
     while ($corrected = <CORRECTEDFILE>) {
+        chomp $corrected;
 	$orig = <ORIGFILE>;
+        chomp($orig);
         $count++;
-        print SCORERIN "$orig";
+        print SCORERIN "$orig\n";
         $scoreorig = <SCOREROUT>;
         chomp $scoreorig;
-        print SCORERIN "$corrected";
+        print SCORERIN "$corrected\n";
         $scorecorrected =  <SCOREROUT>;
         chomp $scorecorrected;
-        if ($scorecorrected > $scoreorig) { $better++ };
-        if ($scorecorrected < $scoreorig) { $worse++ };     
         print "O Original segment: score $scoreorig\nO $orig\n";
-        print "C Corrected segment: score $scorecorrected\nC $corrected\n\n";
+        print "C Corrected segment: score $scorecorrected\nC $corrected\n";
+        if ($scorecorrected > $scoreorig) { print "--> BETTER\n"; $better++; }
+        if ($scorecorrected < $scoreorig) { print "--> WORSE\n"; $worse++; }
+        if ($scorecorrected == $scoreorig) { print "--> EQUAL\n"; }
+        print "\n";   
     }
     close CORRECTEDFILE;
     close ORIGFILE;
