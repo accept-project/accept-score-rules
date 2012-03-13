@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ $# -lt 2 ] ; then
+if [ $# -lt 4 ] ; then
   echo "Usage: score-rules.sh text-file language-model-file truecase-model tok-lang [autoApplyOptions] " >&2
   echo " autoApplyOptions: e.g. -h host -p port -u user --pass pwd -l lang -r ruleset" >&2
   exit 1
