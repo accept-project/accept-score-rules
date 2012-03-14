@@ -3,18 +3,17 @@ use warnings;
 use FileHandle;
 use IPC::Open3;
 
-if ($#ARGV < 2) {
-    print "$0 <subfolder> <input file> <language model file>\n";
+if ($#ARGV <= 0) {
+    print "$0 <subfolder> <language model file>\n";
     exit -1;
 }
 
 $subfolder = $ARGV[0];
-$inputfile = $ARGV[1];
-$lm = $ARGV[2];
+$lm = $ARGV[1];
 
 
 
-@files = <$subfolder/$inputfile*>;
+@files = <$subfolder/*>;
 
 $scorer = "/home/build/mosesdecoder/irstlm/bin/score-lm -lm $lm";
 IPC::Open3::open3 (SCORERIN, SCOREROUT, SCORERERR, "$scorer");
@@ -26,7 +25,7 @@ $summary = "";
 
 foreach $file (@files) {
     next if ($file =~ /\.orig$/);
-    next unless ($file =~ /^$subfolder\/$inputfile\.(.*)$/);
+    next unless ($file =~ /^$subfolder\/(.*)$/);
     @parts = split(/\./, $1);
     $flagtype = $parts[0] || "";
     $rulename = $parts[1] || "";
@@ -42,10 +41,10 @@ foreach $file (@files) {
 	$orig = <ORIGFILE>;
         chomp($orig);
         $count++;
-        print SCORERIN "$orig\n";
+        print SCORERIN "<s> $orig </s>\n";
         $scoreorig = <SCOREROUT>;
         chomp $scoreorig;
-        print SCORERIN "$corrected\n";
+        print SCORERIN "<s> $corrected </s>\n";
         $scorecorrected =  <SCOREROUT>;
         chomp $scorecorrected;
         print "O Original segment: score $scoreorig\nO $orig\n";
@@ -68,4 +67,3 @@ print "\nSUMMARY\n";
 print "-------\n\n";
 print "flag-type,rule-name,#segments,#better,#worse,#equal\n";
 print $summary;
-

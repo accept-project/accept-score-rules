@@ -41,7 +41,7 @@ fi
 
 
 
-export tokfolder=$inputfile.score
+export tokfolder=$inputfile.tokenized
 
 if [ -d $tokfolder ] ; then
     echo "Skipping tokenizing, truecasing & segmentation, because $tokfolder already exists" >& 2
@@ -58,13 +58,9 @@ else
 	export tccmd="cat"
     fi
 
-    #export asecmd="sh /home/build/mosesdecoder/irstlm/bin/add-start-end.sh"
-    #original command adds '</s>' to beginning of file, '<s>' to end,
-    #messes up one-segment-per-line requirement for scoring
-    
     for file in $aafolder/*
     do
-	cat $file | $tokcmd | $tccmd | sed "s/^/<s> /" | sed "s/$/ <\/s>/" > $tokfolder/`basename $file`
+	cat $file | $tokcmd | $tccmd > $tokfolder/`basename $file`
     done
 fi
 
@@ -83,6 +79,7 @@ echo "Tokenization language: $toklang" >> $reportfile
 echo "Truecaser model: $truecasemodel" >> $reportfile
 echo "Options for autoApplyClient: $*\n\n" >> $reportfile
 
-perl score-and-eval.pl $tokfolder $inputfile $lm >> $reportfile
+perl score-and-eval.pl $tokfolder $lm >> $reportfile
 
 echo "Done." >&2
+
