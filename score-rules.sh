@@ -126,11 +126,11 @@ echo "" >> $reportfile
 
 echo "LM Scoring and comparing source language files in $srctokfolder" >& 2
 echo "Language model: $srclm" >& 2
-perl score-and-eval.pl $srctokfolder $srclm >> $reportfile
+perl score-lm.pl $srctokfolder $srclm >> $reportfile
 
 echo "LM Scoring and comparing translated files in $transfolder" >& 2
 echo "Language model: $tgtlm" >& 2
-perl score-and-eval.pl $transfolder $tgtlm >> $reportfile
+perl score-lm.pl $transfolder $tgtlm >> $reportfile
 
 echo "BLEU Scoring and comparing translated files in $transfolder" >& 2
 echo "Tokenized reference translations: $reftokfolder" >& 2
