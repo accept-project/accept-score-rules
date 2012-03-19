@@ -1,35 +1,43 @@
 #!/bin/bash
 
-if [ $# -lt 4 ] ; then
-  echo "Usage: score-rules.sh text-file language-model-file truecase-model tok-lang [autoApplyOptions] " >&2
+if [ $# -lt 9 ] ; then
+  echo "Usage: score-rules.sh text-file src-lmodel src-tcmodel src-toklang mosesserver:port ref-file tgt-lmodel tgt-tcmodel tgt-toklang [autoApplyOptions] " >&2
   echo " autoApplyOptions: e.g. -h host -p port -u user --pass pwd -l lang -r ruleset" >&2
   exit 1
 fi
 
 export inputfile=$1
 shift
-export lm=$1
+export srclm=$1
 shift
-export truecasemodel=$1
+export srctcmodel=$1
 shift
-export toklang=$1
+export srctoklang=$1
+shift
+export mosesserver=$1
+shift
+export reffile=$1
+shift
+export tgtlm=$1
+shift
+export tgttcmodel=$1
+shift
+export tgttoklang=$1
 shift
 
 [ ! -e $inputfile ] && { echo "Input file does not exist" >&2 ; exit 2; }
-[ ! -e $lm ] && { echo "Language model file does not exist" >&2 ; exit 3; }
-
-[ ! -e $truecasemodel ] && { echo "True case model file not found; skipping truecasing" >&2 ; export truecasemodel=""; }
-
-[ -z $toklang ] && { echo "Assuming English as tokenization language" >&2 ; export toklang="en"; }
+[ ! -e $srclm ] && { echo "Input language model file does not exist" >&2 ; exit 3; }
+[ ! -e $reffile ] && { echo "Reference file does not exist" >&2 ; exit 2; }
+[ ! -e $tgtlm ] && { echo "Output language model file does not exist" >&2 ; exit 3; }
 
 
+echo "*** Creating data to score..." >& 2
 
 export aafolder=$inputfile.autoapply
 
 if [ -d $aafolder ] ; then
     echo "Skipping auto-apply step, because $aafolder already exists" >& 2
 else
-    rm -rf $aafolder
     mkdir $aafolder
 
     echo "Auto-applying suggestions to $inputfile, writing to $aafolder..." >&2
@@ -39,47 +47,94 @@ else
 fi
 
 
+export srctokfolder=$inputfile.tokenized
 
-
-export tokfolder=$inputfile.tokenized
-
-if [ -d $tokfolder ] ; then
-    echo "Skipping tokenizing, truecasing & segmentation, because $tokfolder already exists" >& 2
+if [ -d $srctokfolder ] ; then
+    echo "Skipping tokenizing and truecasing of source language data, because $srctokfolder already exists" >& 2
 else
-    mkdir $tokfolder
+    echo "Tokenizing and truecasing from $aafolder to $srctokfolder..." >&2
+    echo "Tokenizer language: $srctoklang, truecaser model: $srctcmodel" >&2
 
-    echo "Tokenizing, truecasing & segmenting files in $aafolder to $tokfolder..." >&2
-    echo "Tokenizer language: $toklang, truecaser model: $truecasemodel" >&2
-
-    export tokcmd="/home/build/mosesdecoder/scripts/tokenizer/tokenizer.perl -a -l $toklang"
-    if [ ! -z $truecasemodel ] ; then
-	export tccmd="/home/build/mosesdecoder/scripts/recaser/truecase.perl --model $truecasemodel"
-    else
-	export tccmd="cat"
-    fi
-
-    for file in $aafolder/*
-    do
-	cat $file | $tokcmd | $tccmd > $tokfolder/`basename $file`
-    done
+    mkdir $srctokfolder
+    sh tokenize.sh $aafolder $srctokfolder "$srctcmodel" "$srctoklang"
 fi
+
+
+
+export transfolder=$inputfile.translated
+
+if [ -d $transfolder ] ; then
+    echo "Skipping translation step, because $transfolder already exists" >& 2
+else
+    mkdir $transfolder
+    echo "Translating files in $srctokfolder to $transfolder using Moses server at $mosesserver" >& 2
+    perl translate.pl $srctokfolder $transfolder $mosesserver
+fi
+
+
+export reffolder=$reffile.ref
+
+if [ -d $reffolder ] ; then
+    echo "Skipping finding of reference translations, because $reffolder already exists" >& 2
+else
+    mkdir $reffolder
+
+    echo "Writing reference translations for original segments in $srctokfolder to $reffolder" >& 2
+    echo "Using $inputfile and $reffile as parallel corpus" >& 2
+    bash findreftrans.sh $inputfile $reffile $aafolder $reffolder
+fi
+
+
+export reftokfolder=$reffile.tokenized
+
+if [ -d $reftokfolder ] ; then
+    echo "Skipping tokenizing and truecasing of reference file, because $reftokfolder already exists" >& 2
+else
+    echo "Tokenizing and truecasing from $reffolder to $reftokfolder..." >&2
+    echo "Tokenizer language: $tgttoklang, truecaser model: $tgttcmodel" >&2
+
+    mkdir $reftokfolder
+    sh tokenize.sh $reffolder $reftokfolder "$tgttcmodel" "$tgttoklang"
+fi
+
+
+
 
 export reportfile=$inputfile.report
 
 echo "Writing results into $reportfile" >&2
 rm -f $reportfile
 
+
+echo "*** Scoring data" >& 2
+
 echo "Auto-application & scoring of rules for MT pre-editing" > $reportfile
 echo "======================================================" >> $reportfile
 echo "" >> $reportfile
 echo "Parameters:" >> $reportfile
 echo "Input document: $inputfile" >> $reportfile
-echo "Language model file: $lm" >> $reportfile
-echo "Tokenization language: $toklang" >> $reportfile
-echo "Truecaser model: $truecasemodel" >> $reportfile
-echo "Options for autoApplyClient: $*\n\n" >> $reportfile
+echo "Source language model file: $srclm" >> $reportfile
+echo "Source language truecaser model: $srctcmodel" >> $reportfile
+echo "Source language for tokenizer: $srctoklang" >> $reportfile
+echo "Moses server: $mosesserver" >> $reportfile
+echo "Reference document: $reffile" >> $reportfile
+echo "Target language model file: $tgtlm" >> $reportfile
+echo "Target language truecaser model: $tgttcmodel" >> $reportfile
+echo "Target language for tokenizer: $tgttoklang" >> $reportfile
+echo "Options for autoApplyClient: $*" >> $reportfile
+echo "" >> $reportfile
 
-perl score-and-eval.pl $tokfolder $lm >> $reportfile
+echo "LM Scoring and comparing source language files in $srctokfolder" >& 2
+echo "Language model: $srclm" >& 2
+perl score-and-eval.pl $srctokfolder $srclm >> $reportfile
+
+echo "LM Scoring and comparing translated files in $transfolder" >& 2
+echo "Language model: $tgtlm" >& 2
+perl score-and-eval.pl $transfolder $tgtlm >> $reportfile
+
+echo "BLEU Scoring and comparing translated files in $transfolder" >& 2
+echo "Tokenized reference translations: $reftokfolder" >& 2
+perl score-bleu.pl $transfolder $reftokfolder >> $reportfile
 
 echo "Done." >&2
 
