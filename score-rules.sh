@@ -134,7 +134,12 @@ perl score-lm.pl $transfolder $tgtlm >> $reportfile
 
 echo "BLEU Scoring and comparing translated files in $transfolder" >& 2
 echo "Tokenized reference translations: $reftokfolder" >& 2
-perl score-bleu.pl $transfolder $reftokfolder >> $reportfile
+perl score-ref.pl BLEU "java -cp bleu/src lingutil.bleu.Main --" $transfolder $reftokfolder >> $reportfile
+
+echo "GTM Scoring and comparing translated files in $transfolder" >& 2
+echo "Tokenized reference translations: $reftokfolder" >& 2
+perl score-ref.pl GTM "sh gtm-wrapper.sh" $transfolder $reftokfolder >> $reportfile
+
 
 echo "Done." >&2
 

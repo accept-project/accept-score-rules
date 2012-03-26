@@ -3,18 +3,19 @@ use warnings;
 use FileHandle;
 use IPC::Open3;
 
-if ($#ARGV <= 0) {
-    print "$0 <cand-folder> <ref-folder>\n";
+if ($#ARGV+1 < 4) {
+    print "$0 <scorer-name> <scorer-cmd-with-args> <cand-folder> <ref-folder>\n";
     exit -1;
 }
 
-$candfolder = $ARGV[0];
-$reffolder = $ARGV[1];
+$type = $ARGV[0];
+$scorer = $ARGV[1];
+$candfolder = $ARGV[2];
+$reffolder = $ARGV[3];
 
-$scorer = "java -cp bleu/src lingutil.bleu.Main --";
 IPC::Open3::open3 (SCORERIN, SCOREROUT, SCORERERR, "$scorer");
 
-print "BLEU SCORING of original and corrected segments in $candfolder\n";
+print "$type SCORING of original and corrected segments in $candfolder\n";
 print "-----------------------------------------------\n\n";
 
 $summary = "";
@@ -52,7 +53,7 @@ foreach $filefull (@files) {
         print SCORERIN "$corrected\n";
         $scorecorrected =  <SCOREROUT>;
         chomp $scorecorrected;
-        print "R Reference segment:\n R $ref\n";
+        print "R Reference segment:\nR $ref\n";
         print "O Original segment: score $scoreorig\nO $orig\n";
         print "C Corrected segment: score $scorecorrected\nC $corrected\n";
         if ($scorecorrected > $scoreorig) { print "--> BETTER\n"; $better++; }
@@ -70,7 +71,7 @@ close SCORERIN;
 close SCOREROUT;
 
 
-print "\nSUMMARY (BLEU score of $candfolder)\n";
+print "\nSUMMARY ($type score of $candfolder)\n";
 print "-------\n\n";
 print "flag-type;rule-name;#segments;#better;#worse;#equal\n";
 print $summary;
