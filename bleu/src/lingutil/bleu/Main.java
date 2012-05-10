@@ -22,7 +22,14 @@
  * @file Main.java The main class, reading command arguments and input.
  * @author Ondřej Dušek
  */
-
+/**
+ * changes by rg/acrolinx:
+ * - compute smoothed BLEU score (see Lin/Och 2004 paper):
+ *   add 1 to n-gram count and hits to prevent BLEU score from becoming 0 if no n-gram matches
+ * - allow input read from standard input
+ * - compute and display BLEU score per input line (sentence), instead of per input file
+ */
+ 
 package lingutil.bleu;
 
 import java.io.BufferedReader;
@@ -49,7 +56,8 @@ public class Main
 
         // parameters check
         if (!((args.length == 1) && "--".equals(args[0])) && (args.length != 2)) {
-            System.err.println("Input parameters: reference_file candidate_file");
+            System.err.println("Input parameters: <reference_file> <candidate_file>     (read from files)");
+            System.err.println("              OR: --    (read from alternating ref/cand lines from stdin)");
             System.exit(1);
         }
 
