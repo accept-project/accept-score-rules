@@ -26,15 +26,15 @@ export tgttoklang=$1
 shift
 
 [ ! -e $inputfile ] && { echo "Input file does not exist" >&2 ; exit 2; }
-#[ ! -e $srclm ] && { echo "Input language model file does not exist" >&2 ; exit 3; }
+[ ! -e $srclm ] && { echo "Input language model file does not exist" >&2 ; exit 3; }
 [ ! -e $reffile ] && { echo "Reference file does not exist" >&2 ; exit 2; }
-#[ ! -e $tgtlm ] && { echo "Output language model file does not exist" >&2 ; exit 3; }
+[ ! -e $tgtlm ] && { echo "Output language model file does not exist" >&2 ; exit 3; }
 
 export thisdir=`dirname $0`
 
 echo "*** Creating data to score..." >& 2
 
-export aafolder=$inputfile.autoapply
+export aafolder=$inputfile.aa
 
 if [ -d $aafolder ] ; then
     echo "Skipping auto-apply step, because $aafolder already exists" >& 2
@@ -48,25 +48,25 @@ else
 fi
 
 
-#export srctokfolder=$inputfile.tokenized
+export srctokfolder=$inputfile.tok
 
-#if [ -d $srctokfolder ] ; then
-#    echo "Skipping tokenizing and truecasing of source language data, because $srctokfolder already exists" >& 2
-#else
-#    echo "Tokenizing and truecasing from $aafolder to $srctokfolder..." >&2
-#    echo "Tokenizer language: $srctoklang, truecaser model: $srctcmodel" >&2
-
-#    mkdir $srctokfolder
-#    sh $thisdir/tokenize.sh $aafolder $srctokfolder "$srctcmodel" "$srctoklang"
-#fi
-
-
-
-export transfolder=$inputfile.translated
-
-if [ -d $transfolder ] ; then
-    echo "Skipping translation step, because $transfolder already exists" >& 2
+if [ -d $srctokfolder ] ; then
+    echo "Skipping tokenizing and truecasing of source language data, because $srctokfolder already exists" >& 2
 else
+    echo "Tokenizing and truecasing from $aafolder to $srctokfolder..." >&2
+    echo "Tokenizer language: $srctoklang, truecaser model: $srctcmodel" >&2
+
+    mkdir $srctokfolder
+    sh $thisdir/tokenize.sh $aafolder $srctokfolder "$srctcmodel" "$srctoklang"
+fi
+
+
+
+export transfolder=$inputfile.$tgttoklang
+
+#if [ -d $transfolder ] ; then
+#    echo "Skipping translation step, because $transfolder already exists" >& 2
+#else
     mkdir $transfolder
     if [[ $mosesserver == http* ]] ; then
 	echo "Translating files in $aafolder to $transfolder using translation API at $mosesserver" >& 2	
@@ -75,10 +75,26 @@ else
 	echo "Translating files in $srctokfolder to $transfolder using Moses server at $mosesserver" >& 2
 	perl $thisdir/translate.pl $srctokfolder $transfolder $mosesserver
     fi
+#fi
+
+export transtokfolder=$inputfile.$tgttoklang.tok
+
+if [ -d $transtokfolder ] ; then
+    echo "Skipping tokenizing and truecasing of translation, because $transtokfolder already exists" >& 2
+else
+    echo "Tokenizing and truecasing from $transfolder to $transokfolder..." >&2
+    echo "Tokenizer language: $tgttoklang, truecaser model: $tgttcmodel" >&2
+
+    mkdir $transtokfolder
+    if [[ $mosesserver == http* ]] ; then
+	sh $thisdir/tokenize.sh $transfolder $transtokfolder "$tgttcmodel" "$tgttoklang"
+    else
+	copy $transfolder/* $transtokfolder
+    fi
 fi
 
 
-export reffolder=$reffile.ref
+export reffolder=$reffile.refs
 
 if [ -d $reffolder ] ; then
     echo "Skipping finding of reference translations, because $reffolder alread exists" >& 2
@@ -90,20 +106,20 @@ else
 fi
 
 
-#export reftokfolder=$reffile.tokenized
+export reftokfolder=$reffile.refs.tok
 
-#if [ -d $reftokfolder ] ; then
-#    echo "Skipping tokenizing and truecasing of reference file, because $reftokfolder already exists" >& 2
-#else
-#    echo "Tokenizing and truecasing from $reffolder to $reftokfolder..." >&2
-#    echo "Tokenizer language: $tgttoklang, truecaser model: $tgttcmodel" >&2
+if [ -d $reftokfolder ] ; then
+    echo "Skipping tokenizing and truecasing of reference file, because $reftokfolder already exists" >& 2
+else
+    echo "Tokenizing and truecasing from $reffolder to $reftokfolder..." >&2
+    echo "Tokenizer language: $tgttoklang, truecaser model: $tgttcmodel" >&2
 
-#    mkdir $reftokfolder
-#    sh $thisdir/tokenize.sh $reffolder $reftokfolder "$tgttcmodel" "$tgttoklang"
-#fi
+    mkdir $reftokfolder
+    sh $thisdir/tokenize.sh $reffolder $reftokfolder "$tgttcmodel" "$tgttoklang"
+fi
 
 
-exit 1
+
 
 
 export reportfile=$inputfile.report
@@ -136,14 +152,14 @@ perl $thisdir/score-lm.pl $srctokfolder $srclm >> $reportfile
 
 echo "LM Scoring and comparing translated files in $transfolder" >& 2
 echo "Language model: $tgtlm" >& 2
-perl $thisdir/score-lm.pl $transfolder $tgtlm >> $reportfile
+perl $thisdir/score-lm.pl $transtokfolder $tgtlm >> $reportfile
 
 echo "BLEU Scoring and comparing translated files in $transfolder" >& 2
 echo "Tokenized reference translations: $reftokfolder" >& 2
-perl $thisdir/score-ref.pl BLEU "java -jar $thisdir/bleu/bleu.jar --" $transfolder $reftokfolder >> $reportfile
+perl $thisdir/score-ref.pl BLEU "java -jar $thisdir/bleu/bleu.jar --" $transtokfolder $reftokfolder >> $reportfile
 
 echo "GTM Scoring and comparing translated files in $transfolder" >& 2
 echo "Tokenized reference translations: $reftokfolder" >& 2
-perl $thisdir/score-ref.pl GTM "sh $thisdir/gtm/gtm-wrapper.sh" $transfolder $reftokfolder >> $reportfile
+perl $thisdir/score-ref.pl GTM "sh $thisdir/gtm/gtm-wrapper.sh" $transtokfolder $reftokfolder >> $reportfile
 
 echo "Done." >&2

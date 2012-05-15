@@ -20,6 +20,10 @@ export apiurl=$1
 shift
 
 for file in $srcfolder/* ; do
-    echo "Translating $file" >& 2
-    (python $thisdir/accept-client.py -s $srclang -t $tgtlang -y sb -i $file -u $apiurl -o $tgtfolder/`basename $file`) || exit 1
+    if [ -e $tgtfolder/`basename $file` ] ; then
+	echo "Skipping translation of $file, since translation already exists" >& 2
+    else
+	echo "Translating $file" >& 2
+	(python $thisdir/accept-client.py -s $srclang -t $tgtlang -y sb -i $file -u $apiurl -o $tgtfolder/`basename $file` 1>&2) || exit 1
+    fi
 done

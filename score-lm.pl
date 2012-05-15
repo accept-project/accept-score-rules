@@ -2,17 +2,17 @@
 use warnings;
 use FileHandle;
 use IPC::Open3;
-use Cwd 'abs_path';
 
 if ($#ARGV <= 0) {
     print "$0 <subfolder> <language model file>\n";
     exit -1;
 }
 
-sub get_score ($result)
+sub get_score
 {
+    my $result = shift;
     chomp ($result);
-    if ($result ~ /Total:\s+(\S+)\s+OOV:/) {
+    if ($result =~ /Total:\s+(\S+)\s+OOV:/) {
 	return $1;
     }
     return -1000.0;
@@ -20,10 +20,9 @@ sub get_score ($result)
 
 $subfolder = $ARGV[0];
 $lm = $ARGV[1];
-$thisdir= abs_path($0);
 
 #$scorer = "/home/build/mosesdecoder/irstlm/bin/score-lm -lm $lm";
-$scorer = "/home/build/mosesdecoder/kenlm/query -lm $lm";
+$scorer = "/home/build/mosesdecoder/kenlm/query $lm";
 IPC::Open3::open3 (SCORERIN, SCOREROUT, SCORERERR, "$scorer");
 
 print "LM SCORING of original and corrected segments in $subfolder\n";
@@ -46,7 +45,7 @@ foreach $file (@files) {
     open CORRECTEDFILE, "$file";
     open ORIGFILE, "$file.orig";
     while ($corrected = <CORRECTEDFILE>) {
-        chomp $corrected;
+        chomp($corrected);
 	$orig = <ORIGFILE>;
         chomp($orig);
         $count++;
