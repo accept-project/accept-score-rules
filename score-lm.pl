@@ -2,18 +2,28 @@
 use warnings;
 use FileHandle;
 use IPC::Open3;
+use Cwd 'abs_path';
 
 if ($#ARGV <= 0) {
     print "$0 <subfolder> <language model file>\n";
     exit -1;
 }
 
+sub get_score ($result)
+{
+    chomp ($result);
+    if ($result ~ /Total:\s+(\S+)\s+OOV:/) {
+	return $1;
+    }
+    return -1000.0;
+}
+
 $subfolder = $ARGV[0];
 $lm = $ARGV[1];
+$thisdir= abs_path($0);
 
-
-
-$scorer = "/home/build/mosesdecoder/irstlm/bin/score-lm -lm $lm";
+#$scorer = "/home/build/mosesdecoder/irstlm/bin/score-lm -lm $lm";
+$scorer = "/home/build/mosesdecoder/kenlm/query -lm $lm";
 IPC::Open3::open3 (SCORERIN, SCOREROUT, SCORERERR, "$scorer");
 
 print "LM SCORING of original and corrected segments in $subfolder\n";
@@ -41,11 +51,11 @@ foreach $file (@files) {
         chomp($orig);
         $count++;
         print SCORERIN "<s> $orig </s>\n";
-        $scoreorig = <SCOREROUT>;
-        chomp $scoreorig;
+        $scoreorigres = <SCOREROUT>;
+        $scoreorig = get_score($scoreorigres);
         print SCORERIN "<s> $corrected </s>\n";
-        $scorecorrected =  <SCOREROUT>;
-        chomp $scorecorrected;
+        $scorecorrectedres =  <SCOREROUT>;
+        $scorecorrected = get_score($scorecorrectedres);
         print "O Original segment: score $scoreorig\nO $orig\n";
         print "C Corrected segment: score $scorecorrected\nC $corrected\n";
         if ($scorecorrected > $scoreorig) { print "--> BETTER\n"; $better++; }
