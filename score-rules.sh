@@ -44,7 +44,7 @@ else
     echo "Auto-applying suggestions to $inputfile, writing to $aafolder..." >&2
     echo "Options: $*" >&2
 
-    java -jar $thisdir/autoApplyClient/autoApplyClient-0.1.2-SNAPSHOT-jar-with-dependencies.jar -applySeparately -suppressResults -o $aafolder $* $inputfile
+    java -jar $thisdir/autoApplyClient/autoApplyClient-0.1.3-SNAPSHOT-jar-with-dependencies.jar -applySeparately -suppressResults -o $aafolder $* $inputfile
 fi
 
 
