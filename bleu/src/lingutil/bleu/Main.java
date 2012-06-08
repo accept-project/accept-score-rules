@@ -23,13 +23,12 @@
  * @author Ondřej Dušek
  */
 /**
- * changes by rg/acrolinx:
- * - compute smoothed BLEU score (see Lin/Och 2004 paper):
- *   add 1 to n-gram count and hits to prevent BLEU score from becoming 0 if no n-gram matches
- * - allow input read from standard input
- * - compute and display BLEU score per input line (sentence), instead of per input file
+ * changes by rg/acrolinx: - compute smoothed BLEU score (see Lin/Och 2004 paper): add 1 to n-gram
+ * count and hits to prevent BLEU score from becoming 0 if no n-gram matches - allow input read from
+ * standard input - compute and display BLEU score per input line (sentence), instead of per input
+ * file
  */
- 
+
 package lingutil.bleu;
 
 import java.io.BufferedReader;
@@ -102,8 +101,8 @@ public class Main
             }
 
             // split to tokens by whitespace
-            candLine.trim();
-            refLine.trim();
+            candLine = candLine.trim();
+            refLine = refLine.trim();
             candTokens = candLine.split("\\s+");
             refTokens = refLine.split("\\s+");
 
