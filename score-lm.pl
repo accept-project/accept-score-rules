@@ -18,6 +18,14 @@ sub get_score
     return -1000.0;
 }
 
+sub trim {
+    my $str = shift;
+    chomp $str;
+    $str =~ s/^\s+//;
+    $str =~ s/\s+$//; 
+    return $str;
+}
+
 $subfolder = $ARGV[0];
 $lm = $ARGV[1];
 
@@ -45,9 +53,9 @@ foreach $file (@files) {
     open CORRECTEDFILE, "$file";
     open ORIGFILE, "$file.orig";
     while ($corrected = <CORRECTEDFILE>) {
-        chomp($corrected);
-	$orig = <ORIGFILE>;
-        chomp($orig);
+        $corrected = trim($corrected);        
+        if (!($orig = <ORIGFILE>)) { die "$file.orig is shorter than $file!"; };
+        $orig = trim($orig);
         $count++;
         print SCORERIN "<s> $orig </s>\n";
         $scoreorigres = <SCOREROUT>;

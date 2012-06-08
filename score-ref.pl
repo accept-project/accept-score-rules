@@ -4,14 +4,23 @@ use FileHandle;
 use IPC::Open3;
 
 if ($#ARGV+1 < 4) {
-    print "$0 <scorer-name> <scorer-cmd-with-args> <cand-folder> <ref-folder>\n";
+    print "$0 <scorer-name> <scorer-cmd-with-args> <cand-folder> <ref-folder> [invert]\n";
     exit -1;
+}
+
+sub trim {
+    my $str = shift;
+    chomp $str;
+    $str =~ s/^\s+//;
+    $str =~ s/\s+$//; 
+    return $str;
 }
 
 $type = $ARGV[0];
 $scorer = $ARGV[1];
 $candfolder = $ARGV[2];
 $reffolder = $ARGV[3];
+$comparefactor = ($#ARGV+1 >= 5) ? -1.0 : 1.0;
 
 IPC::Open3::open3 (SCORERIN, SCOREROUT, SCORERERR, "$scorer");
 
@@ -39,11 +48,11 @@ foreach $filefull (@files) {
     open ORIGFILE, "$candfolder/$file.orig";
     open REFFILE, "$reffolder/$file.ref";
     while ($corrected = <CORRECTEDFILE>) {
-        chomp $corrected;
-	$orig = <ORIGFILE>;
-        chomp($orig);
-        $ref = <REFFILE>;
-        chomp($ref);
+        $corrected = trim($corrected);
+        if (!($orig = <ORIGFILE>)) { die "$file.orig is shorter than $file!"; }
+        $orig = trim($orig);
+        if (!($ref = <ORIGFILE>)) { die "$file.ref is shorter than $file!"; }
+        $ref = trim($ref);
         $count++;
         print SCORERIN "$ref\n";
         print SCORERIN "$orig\n";
@@ -56,8 +65,8 @@ foreach $filefull (@files) {
         print "R Reference segment:\nR $ref\n";
         print "O Original segment: score $scoreorig\nO $orig\n";
         print "C Corrected segment: score $scorecorrected\nC $corrected\n";
-        if ($scorecorrected > $scoreorig) { print "--> BETTER\n"; $better++; }
-        if ($scorecorrected < $scoreorig) { print "--> WORSE\n"; $worse++; }
+        if ($scorecorrected*$comparefactor > $scoreorig*$comparefactor) { print "--> BETTER\n"; $better++; }
+        if ($scorecorrected*$comparefactor < $scoreorig*$comparefactor) { print "--> WORSE\n"; $worse++; }
         if ($scorecorrected == $scoreorig) { print "--> EQUAL\n"; }
         print "\n";   
     }

@@ -162,4 +162,8 @@ echo "GTM Scoring and comparing translated files in $transfolder" >& 2
 echo "Tokenized reference translations: $reftokfolder" >& 2
 perl $thisdir/score-ref.pl GTM "sh $thisdir/gtm/gtm-wrapper.sh" $transtokfolder $reftokfolder >> $reportfile
 
+echo "GTM Scoring and comparing translated files in $transfolder" >& 2
+echo "Tokenized reference translations: $reftokfolder" >& 2
+perl $thisdir/score-ref.pl TER "sh $thisdir/ter/ter-wrapper.sh" $transtokfolder $reftokfolder invert >> $reportfile
+
 echo "Done." >&2
