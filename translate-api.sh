@@ -1,5 +1,8 @@
 #!/bin/bash
-echo x
+#
+# Translate all files in a folder using the Google Translate API of a Moses server 
+# (wrapper for accept-client.py)
+#
 
 if [ $# -lt 5 ] ; then
     echo "Usage: $0 <srcfolder> <srclang> <tgtfolder> <tgtlang> <api-url>"
@@ -21,9 +24,9 @@ shift
 
 for file in $srcfolder/* ; do
     if [ -e $tgtfolder/`basename $file` ] ; then
-	echo "Skipping translation of $file, since translation already exists" >& 2
+		echo "Skipping translation of $file, since translation already exists" >& 2
     else
-	echo "Translating $file" >& 2
-	(python $thisdir/accept-client.py -s $srclang -t $tgtlang -y sb -i $file -u $apiurl -o $tgtfolder/`basename $file` 1>&2) || exit 1
+		echo "Translating $file" >& 2
+		(python $thisdir/accept-client.py -s $srclang -t $tgtlang -y sb -i $file -u $apiurl -o $tgtfolder/`basename $file` 1>&2) || exit 1
     fi
 done

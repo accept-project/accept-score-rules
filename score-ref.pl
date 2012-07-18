@@ -1,4 +1,13 @@
 #!/usr/bin/perl
+#
+# Score segments in a candidate folder containing original and corrected segments
+# with respect to a reference folder containing corresponding reference segments.
+# For each triple, the script output whether the score of the corrected segment was
+# better/equal/worse than the one of the original segment with respect to the reference translation.
+# The scorer can be any process that takes a reference and a candidate segment on stdin (each on a line), and
+# returns the score as a number on stdout.
+# Use the "invert" option to treat higher score numbers as worse, which is e.g. the case with TER.
+
 use warnings;
 use FileHandle;
 use IPC::Open3;

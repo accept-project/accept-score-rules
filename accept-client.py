@@ -6,7 +6,7 @@
 
 #
 # Translates using the google api style interface
-#
+# 
 
 import json
 import urllib
@@ -18,9 +18,6 @@ TGT_LANGS = ["en", "fr", "de", "ja"]
 SYSTEMS = ["tb", "sb"]
 
 def main(**kwargs):
-#    urls = ["http://accept:motelone@accept.statmt.org/demo/translate.php"]
-#    for url in urls:
-        #print url
     url = kwargs.get("url")
     source = kwargs.get("source")
     target = kwargs.get("target")
@@ -40,12 +37,8 @@ def main(**kwargs):
                 for l in open(cache).readlines():
                     cache_line = l.split('\t')
                     cache_lines[cache_line[0].rstrip()] = cache_line[1]
-                    #raise ValueError('File does not contain 2 tab-delimited fields: %s' % cache)
-            #print cache_lines
-            #sys.exit()
             with open(output_fn, 'w') as f_out:
                 for i,line in enumerate(f.readlines()):
-                    #if i in range(0, len(f.readlines()), 10):
                     print i
                     if line.rstrip() == "":
                         f_out.write(line)

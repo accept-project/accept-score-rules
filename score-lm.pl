@@ -1,4 +1,9 @@
 #!/usr/bin/perl
+#
+# Score segments of a folder containing original and corrected segments using KenLM and a given language model.
+# The output contains the scores, as well as the BETTER/WORSE/EQUAL ranking for each segment.
+# Some aggregated statistics (group by rule) are printed at the end.
+
 use warnings;
 use FileHandle;
 use IPC::Open3;

@@ -1,4 +1,11 @@
 #!/bin/bash
+#
+# Find all reference translations of segments of all files in a folder.
+# The results are written into a parallel target folder with the same file names, but with a "ref" ending.
+# For each segment, its reference translations is found by finding it in the source segments file, 
+# and by searching for the reference translation in the corresponding parallel target segments file.
+#
+
 
 if [ $# -lt 4 ] ; then
   echo "Usage: findreftrans.sh segments.src segments.tgt orig.folder ref.folder"

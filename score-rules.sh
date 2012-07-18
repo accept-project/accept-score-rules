@@ -1,4 +1,19 @@
 #!/bin/bash
+#
+# The main rule scoring script.
+#
+# The script...
+# - runs the AutoApply client on a given input text file, creating a set of original and corrected segments grouped by Acrolinx rule
+# - tokenizes and truecases the original and corrected segments using a source language truecaser and tokenizer
+# - scores the tokenized original and corrected segments using a language model for the source language
+# - finds the reference translations of the original and corrected segments using a reference file that is parallel to the input file
+# - translates the original and corrected segments using Moses (either via the Moses server XML-RPC interface, or via the Google Translate API)
+# - tokenizes and truecases the translated original and corrected segments using a target language truecaser and tokenizer
+# - scores the translated+tokenized original and corrected segments using a language model for the target language
+# - tokenizes and truecases the reference translations using a target language truecaser and tokenizer
+# - scores the translated+tokenized original and corrected segments against the tokenized reference segments
+#   using smoothed BLEU, TER, and GTM
+# - outputs the results for all phases (absolute scores as well as better/equal/worse statistics grouped by Acrolinx rule)
 
 if [ $# -lt 9 ] ; then
   echo "Usage: score-rules.sh text-file src-lmodel src-tcmodel src-toklang mosesserver:port ref-file tgt-lmodel tgt-tcmodel tgt-toklang [autoApplyOptions] " >&2

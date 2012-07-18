@@ -1,7 +1,11 @@
 #!/usr/bin/perl
+#
+# Translate files in a folder using a Moses server (via its XML-RPC interface),
+# and write the translation into an output folder with the same file names.
+# 
+
 use warnings;
 use FileHandle;
-use IPC::Open3;
 use Encode;
 use XMLRPC::Lite;
 use utf8;
@@ -30,10 +34,10 @@ foreach $file (@files) {
     open OUTFILE, ">$foldertgt/$1";
     binmode(OUTFILE, ":utf8");
     while ($input = <INFILE>) {
-	$encoded = SOAP::Data->type(string => Encode::encode("utf8",$input));
-	my %param = ("text" => $encoded, "align" => "false", "report-all-factors" => "false");
-	$result = $proxy->call("translate",\%param)->result;
-	$output = $result->{'text'};
+		$encoded = SOAP::Data->type(string => Encode::encode("utf8",$input));
+		my %param = ("text" => $encoded, "align" => "false", "report-all-factors" => "false");
+		$result = $proxy->call("translate",\%param)->result;
+		$output = $result->{'text'};
         $output =~ s/\|UNK\|UNK\|UNK//g;
         print OUTFILE "$output\n";
     }

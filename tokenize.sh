@@ -1,4 +1,7 @@
 #!/bin/bash
+#
+# Tokenize and truecase each file in a folder using the respective Moses scripts.
+# Specify the truecase model and tokenization language like 'en'.
 
 if [ $# -lt 4 ] ; then
   echo "Usage: tokenize.sh infolder outfolder truecase-model tok-lang" >& 2

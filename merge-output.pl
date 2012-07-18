@@ -1,7 +1,14 @@
 #!/usr/bin/perl
+#
+# Merge segments of different folders into one file:
+# - source language folder (containing original and corrected segments)
+# - MT-translated target language folder (containing original and corrected segments)
+# - folder containing reference translation segments from reference set 1
+# - folder containing reference translation segments from reference set 2
+#
+
 use warnings;
 use FileHandle;
-use IPC::Open3;
 
 if ($#ARGV <= 2) {
     print "$0 <srcfolder> <tgtfolder> <ref1folder> <ref2folder>\n";
@@ -28,25 +35,25 @@ foreach $file (@files) {
     open REF1FILE, "$ref1folder/$basename.ref";
     open REF2FILE, "$ref2folder/$basename.ref";
     while ($orig = <ORIGFILE>) {
-	$corrected = <CORRECTEDFILE>;
-	$tgtorig = <TGTORIGFILE>;
-	$tgtcorrected = <TGTCORRECTEDFILE>;
-	$ref1 = <REF1FILE>;
-	$ref2 = <REF2FILE>;
-	chomp $orig;
-	chomp $corrected;
-	chomp $tgtorig;
-	chomp $tgtcorrected;
-	chomp $ref1;
-	chomp $ref2;
-	print "$flagtype\t$rulename\n";
-	print "SO\t$orig\n";
-	print "SC\t$corrected\n";
-	print "TO\t$tgtorig\n";
-	print "TC\t$tgtcorrected\n";
-	print "R1\t$ref1\n";
-	print "R2\t$ref2\n";
-	print "\n";
+		$corrected = <CORRECTEDFILE>;
+		$tgtorig = <TGTORIGFILE>;
+		$tgtcorrected = <TGTCORRECTEDFILE>;
+		$ref1 = <REF1FILE>;
+		$ref2 = <REF2FILE>;
+		chomp $orig;
+		chomp $corrected;
+		chomp $tgtorig;
+		chomp $tgtcorrected;
+		chomp $ref1;
+		chomp $ref2;
+		print "$flagtype\t$rulename\n";
+		print "SO\t$orig\n";
+		print "SC\t$corrected\n";
+		print "TO\t$tgtorig\n";
+		print "TC\t$tgtcorrected\n";
+		print "R1\t$ref1\n";
+		print "R2\t$ref2\n";
+		print "\n";
     }
     close ORIGFILE;
     close CORRECTEDFILE;
