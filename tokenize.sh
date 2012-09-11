@@ -1,34 +1,30 @@
 #!/bin/bash
 #
-# Tokenize and truecase each file in a folder using the respective Moses scripts.
+# Tokenize and truecase a file using the respective Moses scripts.
 # Specify the truecase model and tokenization language like 'en'.
 
 if [ $# -lt 4 ] ; then
-  echo "Usage: tokenize.sh infolder outfolder truecase-model tok-lang" >& 2
+  echo "Usage: tokenize.sh infile outfile truecase-model tok-lang" >& 2
   exit 1
 fi
 
-export infolder=$1
+export infile=$1
 shift
-export outfolder=$1
+export outfile=$1
 shift
 export truecasemodel=$1
 shift
 export toklang=$1
 shift
 
-[ ! -d $infolder ] && { echo "Input file does not exist" >&2 ; exit 2; }
-[ ! -d $outfolder ] && { echo "$outfolder does not exist, creating it" >& 2 ; mkdir -p $outfolder; }
+[ ! -e $infile ] && { echo "Input file does not exist" >&2 ; exit 2; }
 [ ! -e $truecasemodel ] && { echo "True case model file not found; skipping truecasing" >&2 ; export truecasemodel=""; }
 
-export tokcmd="/home/build/mosesdecoder/scripts/tokenizer/tokenizer.perl -a -l $toklang"
+export tokcmd="$MOSES_DIR/scripts/tokenizer/tokenizer.perl -a -l $toklang"
 if [ ! -z $truecasemodel ] ; then
-    export tccmd="/home/build/mosesdecoder/scripts/recaser/truecase.perl --model $truecasemodel"
+    export tccmd="$MOSES_DIR/scripts/recaser/truecase.perl --model $truecasemodel"
 else
     export tccmd="cat"
 fi
 
-for file in $infolder/*
-do
-    cat $file | $tokcmd | $tccmd > $outfolder/`basename $file`
-done
+cat $infile | $tokcmd | $tccmd > $outfile

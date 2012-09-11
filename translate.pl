@@ -12,36 +12,30 @@ use utf8;
 use File::Path;
 
 if ($#ARGV < 2) {
-    print "$0 <subfolder-input> <subfolder-output> <mosesserver:port>\n";
+    print "$0 <inputfile> <outputfile> <mosesserver:port>\n";
     exit -1;
 }
 
-$foldersrc = $ARGV[0];
-$foldertgt = $ARGV[1];
+$srcfile = $ARGV[0];
+$tgtfile = $ARGV[1];
 $server = $ARGV[2];
-
-@files = <$foldersrc/*>;
-
-File::Path->make_path($foldertgt);
 
 $url = "http://$server/RPC2";
 $proxy = XMLRPC::Lite->proxy($url);
 
-foreach $file (@files) {
-    $file =~ /^$foldersrc\/(.*)$/;
-    print "reading $file, writing $foldertgt/$1\n";
-    open INFILE, "$file";
-    open OUTFILE, ">$foldertgt/$1";
-    binmode(OUTFILE, ":utf8");
-    while ($input = <INFILE>) {
-		$encoded = SOAP::Data->type(string => Encode::encode("utf8",$input));
-		my %param = ("text" => $encoded, "align" => "false", "report-all-factors" => "false");
-		$result = $proxy->call("translate",\%param)->result;
-		$output = $result->{'text'};
-        $output =~ s/\|UNK\|UNK\|UNK//g;
-        print OUTFILE "$output\n";
-    }
-    close INFILE;
-    close OUTFILE;
+print "reading $srcfile, writing $tgtfile/$1\n";
+open INFILE, "$srcfile";
+open OUTFILE, ">$tgtfile";
+binmode(OUTFILE, ":utf8");
+while ($input = <INFILE>) {
+    $encoded = SOAP::Data->type(string => Encode::encode("utf8",$input));
+    my %param = ("text" => $encoded, "align" => "false", "report-all-factors" => "false");
+    $result = $proxy->call("translate",\%param)->result;
+    $output = $result->{'text'};
+    $output =~ s/\|UNK\|UNK\|UNK//g;
+    print OUTFILE "$output\n";
 }
+close INFILE;
+close OUTFILE;
+
 

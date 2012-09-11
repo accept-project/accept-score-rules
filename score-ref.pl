@@ -12,8 +12,8 @@ use warnings;
 use FileHandle;
 use IPC::Open3;
 
-if ($#ARGV+1 < 4) {
-    print "$0 <scorer-name> <scorer-cmd-with-args> <cand-folder> <ref-folder> [invert]\n";
+if ($#ARGV+1 < 5) {
+    print "$0 <scorer-cmd-with-args> <origfile> <correctedfile> <scorefile> <reffile> [--invert]\n";
     exit -1;
 }
 
@@ -25,73 +25,81 @@ sub trim {
     return $str;
 }
 
-$type = $ARGV[0];
-$scorer = $ARGV[1];
-$candfolder = $ARGV[2];
-$reffolder = $ARGV[3];
-$comparefactor = ($#ARGV+1 >= 5) ? -1.0 : 1.0;
+$scorer = $ARGV[0];
+$fnameO = $ARGV[1];
+$fnameC = $ARGV[2];
+$fnameS = $ARGV[3];
+$fnameR = $ARGV[4];
+$comparefactor = ($#ARGV+1 >= 6) ? -1.0 : 1.0;
 
 IPC::Open3::open3 (SCORERIN, SCOREROUT, SCORERERR, "$scorer");
 
-print "$type SCORING of original and corrected segments in $candfolder\n";
-print "-----------------------------------------------\n\n";
+#print "$type SCORING of original and corrected segments in $candfolder\n";
+#print "-----------------------------------------------\n\n";
 
-$summary = "";
+#$summary = "";
 
-@files = <$candfolder/*>;
-foreach $filefull (@files) {
-    next if ($filefull =~ /\.orig$/);
-    next if ($filefull =~ /\.ref$/);
-    next unless ($filefull =~ /^$candfolder\/(.*)$/);
-    $file = $1;
+#@files = <$candfolder/*>;
+#foreach $filefull (@files) {
+#    next if ($filefull =~ /\.orig$/);
+#    next if ($filefull =~ /\.ref$/);
+#    next unless ($filefull =~ /^$candfolder\/(.*)$/);
+#    $file = $1;
 
-    @parts = split(/\./, $file);
-    $flagtype = $parts[0] || "";
-    $rulename = $parts[1] || "";
-    print "Flag type $flagtype, rule $rulename\n";
-    print "--------------------------------------------------\n\n";
-    $count = 0;
-    $better = 0;
-    $worse = 0;
-    open CORRECTEDFILE, "$candfolder/$file";
-    open ORIGFILE, "$candfolder/$file.orig";
-    open REFFILE, "$reffolder/$file.ref";
-    while ($corrected = <CORRECTEDFILE>) {
-        $corrected = trim($corrected);
-        if (!($orig = <ORIGFILE>)) { die "$file.orig is shorter than $file!"; }
-        $orig = trim($orig);
-        if (!($ref = <ORIGFILE>)) { die "$file.ref is shorter than $file!"; }
-        $ref = trim($ref);
-        $count++;
-        print SCORERIN "$ref\n";
-        print SCORERIN "$orig\n";
-        $scoreorig = <SCOREROUT>;
-        chomp $scoreorig;
-        print SCORERIN "$ref\n";
-        print SCORERIN "$corrected\n";
-        $scorecorrected =  <SCOREROUT>;
-        chomp $scorecorrected;
-        print "R Reference segment:\nR $ref\n";
-        print "O Original segment: score $scoreorig\nO $orig\n";
-        print "C Corrected segment: score $scorecorrected\nC $corrected\n";
-        if ($scorecorrected*$comparefactor > $scoreorig*$comparefactor) { print "--> BETTER\n"; $better++; }
-        if ($scorecorrected*$comparefactor < $scoreorig*$comparefactor) { print "--> WORSE\n"; $worse++; }
-        if ($scorecorrected == $scoreorig) { print "--> EQUAL\n"; }
-        print "\n";   
-    }
-    close CORRECTEDFILE;
-    close ORIGFILE;
-    $summary .= sprintf("%s;%s;%d;%d;%d;%d\n", $flagtype, $rulename, $count, $better, $worse, $count-$better-$worse);
+#    @parts = split(/\./, $file);
+#    $flagtype = $parts[0] || "";
+#    $rulename = $parts[1] || "";
+#    print "Flag type $flagtype, rule $rulename\n";
+#    print "--------------------------------------------------\n\n";
+#    $count = 0;
+#    $better = 0;
+#    $worse = 0;
+open ORIGFILE, "$fnameO";
+open CORRECTEDFILE, "$fnameC";
+open SCOREFILE, ">$fnameS";
+open REFFILE, "$fnameR";
+while ($corrected = <CORRECTEDFILE>) {
+    $corrected = trim($corrected);
+    if (!($orig = <ORIGFILE>)) { die "$fnameO is shorter than $file!"; }
+    $orig = trim($orig);
+    if (!($ref = <REFFILE>)) { die "$fnameR is shorter than $file!"; }
+    $ref = trim($ref);
+    $count++;
+    print SCORERIN "$ref\n";
+    print SCORERIN "$orig\n";
+    $scoreorig = <SCOREROUT>;
+    chomp $scoreorig;
+    print SCORERIN "$ref\n";
+    print SCORERIN "$corrected\n";
+    $scorecorrected =  <SCOREROUT>;
+    chomp $scorecorrected;
+#    print "R Reference segment:\nR $ref\n";
+#    print "O Original segment: score $scoreorig\nO $orig\n";
+#    print "C Corrected segment: score $scorecorrected\nC $corrected\n";
+#        if ($scorecorrected*$comparefactor > $scoreorig*$comparefactor) { print "--> BETTER\n"; $better++; }
+#        if ($scorecorrected*$comparefactor < $scoreorig*$comparefactor) { print "--> WORSE\n"; $worse++; }
+#        if ($scorecorrected == $scoreorig) { print "--> EQUAL\n"; }
+    if ($scorecorrected*$comparefactor > $scoreorig*$comparefactor) { $compare = "better"; }
+    if ($scorecorrected*$comparefactor < $scoreorig*$comparefactor) { $compare = "worse"; }
+    if ($scorecorrected == $scoreorig) { $compare = "equal"; }
+    print SCOREFILE, "%s\t%s\t%s\n", $compare, $scoreorig, $scorecorrected;
 }
+close CORRECTEDFILE;
+close ORIGFILE;
+close REFFILE;
+close SCOREFILE;
+    
+#    $summary .= sprintf("%s;%s;%d;%d;%d;%d\n", $flagtype, $rulename, $count, $better, $worse, $count-$better-$worse);
+#}
 
 
 close SCORERIN;
 close SCOREROUT;
 
 
-print "\nSUMMARY ($type score of $candfolder)\n";
-print "-------\n\n";
-print "flag-type;rule-name;#segments;#better;#worse;#equal\n";
-print $summary;
-print "\n\n\n\n";
+#print "\nSUMMARY ($type score of $candfolder)\n";
+#print "-------\n\n";
+#print "flag-type;rule-name;#segments;#better;#worse;#equal\n";
+#print $summary;
+#print "\n\n\n\n";
 
