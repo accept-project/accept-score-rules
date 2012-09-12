@@ -11,7 +11,7 @@ use XMLRPC::Lite;
 use utf8;
 use File::Path;
 
-if ($#ARGV < 2) {
+if (scalar(@ARGV) < 3) {
     print "$0 <inputfile> <outputfile> <mosesserver:port>\n";
     exit -1;
 }

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Find all reference translations of segments in a file.
 # The results are written into a parallel target file.
@@ -18,13 +18,15 @@ export TGTCORPUS=$2
 export SRCFILE=$3
 export TGTFILE=$4
 
+export TMPFILE=$SRCFILE.tmp
+
 touch $TGTFILE
 while read -r STR ; do
     echo "$STR" > $TMPFILE
     export LINE=`fgrep --line-number -f $TMPFILE $SRCCORPUS | head -1 | cut -d ':' -f 1`
     if [ -z "$LINE" ] ; then
 	echo "Warning: no line found in $TGTCORPUS corresponding to the following sentence in $SRCCORPUS, outputting empty line:" >& 2
-	echo $STR >& 2
+	cat $TMPFILE >& 2
 	echo "" >> $TGTFILE
     else
 	sed -n "${LINE},${LINE}p" $TGTCORPUS >> $TGTFILE

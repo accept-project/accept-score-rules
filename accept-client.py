@@ -39,20 +39,22 @@ def main(**kwargs):
                     cache_lines[cache_line[0].rstrip()] = cache_line[1]
             with open(output_fn, 'w') as f_out:
                 for i,line in enumerate(f.readlines()):
-                    print i
+                    print 'Translating #'+str(i)
+                    print 'In: '+line
                     if line.rstrip() == "":
                         f_out.write(line)
                     else:
                         if cache and line.rstrip() in cache_lines:
-                            print 'Matched!'
+                            print 'Matched sentence in cache!'
                             f_out.write(cache_lines[line.rstrip()])
                         else:
-                            print 'Translating...'
                             params = urllib.urlencode({'v' : '1.0', 'ie' : 'UTF8', \
                                 'langpair' : '%s|%s' % (source,target), 'q' : line.rstrip(), 'system': system})
                             f = urllib.urlopen(url,params)
                             response = json.loads(f.readline())
-                            f_out.write(response['responseData']['translatedText'].encode('utf-8') + '\n')
+                            translation = response['responseData']['translatedText'].encode('utf-8') + '\n'
+                            f_out.write(translation)
+                            print 'Out: ' + translation 
     else:
         params = urllib.urlencode({'v' : '1.0', 'ie' : 'UTF8', \
             'langpair' : '%s|%s' % (source,target), 'q' : input_text, 'system': system})

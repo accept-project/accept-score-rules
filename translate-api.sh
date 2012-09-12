@@ -22,4 +22,4 @@ shift
 export apiurl=$1
 shift
 
-(python $thisdir/accept-client.py -s $srclang -t $tgtlang -y sb -i $srcfile -u $apiurl -o $tgtfile 1>&2) || exit 1
+(python -u $thisdir/accept-client.py -s $srclang -t $tgtlang -y sb -i $srcfile -u $apiurl -o $tgtfile) || exit 1
