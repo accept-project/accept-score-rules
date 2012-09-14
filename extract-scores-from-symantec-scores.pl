@@ -4,9 +4,9 @@ my $line = "";
 my $HUMAN_SCORES_INCLUDED = 1;
 my $offset = ($HUMAN_SCORES_INCLUDED) ? 4 : 0;
 
-if (scalar(@ARGV) < 4) {
-	print "$0 <input-file> <output-files-basename>"
-	exit -1;
+if (scalar(@ARGV) < 2) {
+    print "$0 <input-file> <output-files-basename>";
+    exit -1;
 }
 
 my $fname = $ARGV[0];
@@ -14,10 +14,11 @@ my $basename = $ARGV[1];
 
 open INFILE, "$fname";
 my %fhandles;
-foreach $metric in ("gtm1", "gtm2", "ter1", "ter2", "bleu1", "bleu2") {
+foreach $metric ("gtm1", "gtm2", "ter1", "ter2", "bleu1", "bleu2", "human") {
 	$scorefile = "$basename.$metric";
-	open OUTFILE, ">$scorefile";
-	$fhandles{$metric} = OUTFILE;
+	my $fhandle;
+	open $fhandle, ">$scorefile";
+	$fhandles{$metric} = $fhandle;
 }
 
 
@@ -30,6 +31,7 @@ sub scoreline {
 		if ($correctedscore*$factor < $origscore*$factor) { $line = "worse\t$origscore\t$correctedscore\n" };
 		if ($origscore == $correctedscore) { $line = "equal\t$origscore\t$correctedscore\n" };
 	}
+	print "$metricname, $line\n";
 	$fhandle = $fhandles{$metricname};
 	print $fhandle "$line\n";
 }
@@ -78,8 +80,8 @@ while ($line = <INFILE>) {
 		scoreline("gtm1", $original_ref1_gtm_fmeasure, $changed_ref1_gtm_fmeasure, 0);
 		scoreline("gtm2", $original_ref2_gtm_fmeasure, $changed_ref2_gtm_fmeasure, 0);
 		
-		scoreline("gtm1", $original_ref1_ter_score, $changed_ref1_ter_score, 1);
-		scoreline("gtm2", $original_ref2_ter_score, $changed_ref2_ter_score, 1);		
+		scoreline("ter1", $original_ref1_ter_score, $changed_ref1_ter_score, 1);
+		scoreline("ter2", $original_ref2_ter_score, $changed_ref2_ter_score, 1);		
 		
 	}
 	elsif ($parts[0] ne "") {
@@ -88,7 +90,7 @@ while ($line = <INFILE>) {
 			if ($parts[2] eq "1") { $original_human_score = 0; $changed_human_score = 1; } 
 			if ($parts[3] eq "1") { $original_human_score = 1; $changed_human_score = 0; } 
 			if ($parts[4] eq "1") { $original_human_score = 1; $changed_human_score = 1; }
-			scoreline("HUMAN", $original_human_score, $changed_human_score, 0);
+			scoreline("human", $original_human_score, $changed_human_score, 0);
 		}
 	}
 }
