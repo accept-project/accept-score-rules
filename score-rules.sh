@@ -305,11 +305,13 @@ log "--- Combining data"
 if [ -e $summary ] ; then
     log "Skipping combination of score and segments files into $summary, as it already exists."
 else
-    export humanS=$bname.human
+    export humanS=$bname.human    
     export scores="R1 $ref1 BLEU1 $bleuS1 GTM1 $gtmS1 TER1 $terS1"
     if [ -n $reffile 2 ] ; then
 	export scores="$scores R2 $ref2 BLEU2 $bleuS2 GTM2 $gtmS2 TER2 $terS2"
     fi
+    export tgtlangupper=`echo $tgttoklang | tr '[:lower:]' '[:upper:]'`
+    export scores="$scores LM-EN $lmsrcS LM-$tgtlangupper $lmtgtS"
     if [ -e $humanS ] ; then
 	export scores="$scores HUMAN $humanS"
     fi

@@ -20,8 +20,10 @@ open INFILE, "$summary";
 open OUTFILE, ">$outfile";
 
 my %scores;
-my @knownmetrics = ('BLEU1', 'BLEU2', 'GTM1', 'GTM2', 'TER1', 'TER2', 'HUMAN');
-
+my @input_metrics = ('LM-EN', 'LM-DE', 'LM-FR', 'BLEU1', 'BLEU2', 'GTM1', 'GTM2', 'TER1', 'TER2', 'HUMAN');
+my @output_metrics = ('LM-EN', 'LM-DE', 'AVG', 'HUMAN');
+my @avg_metrics = ('BLEU1', 'BLEU2', 'GTM1', 'GTM2', 'TER1', 'TER2');
+my $count_threshold = 13;
 
 while ($str = <INFILE>) {
     my %record;
@@ -39,27 +41,56 @@ while ($str = <INFILE>) {
     if ($parts[0] eq "GRAMMAR" || $parts[0] eq "SPELLING" || $parts[0] eq "STYLE" || $parts[0] eq "TERM") {
 	$flagtype = $parts[0];
 	$rulename = $parts[1];
-	foreach $metric (@knownmetrics) {
+	foreach $metric (@input_metrics) {
 	    $scoreline = $record{$metric};
 	    if ($scoreline ne "") {
 		@parts = split(/\t/, $scoreline);		
 		$scores{$flagtype}{$rulename}{$metric}{$parts[0]}++;
-		$scores{$flagtype}{$rulename}{$metric}{"count"}++;		
+		$scores{$flagtype}{$rulename}{$metric}{"count"}++;
+		
 	    }
 	}
     }
 }
 
-print OUTFILE "flagtype\trulename\tmetric\tcount\tbetter\tworse\tequal\n";
 foreach $flagtype (sort keys %scores) {
     foreach $rulename (sort keys %{$scores{$flagtype}}) {
-	foreach $metric (@knownmetrics) {
+	foreach $column ("better", "worse", "equal", "count") {
+	    $metrics_count = 0;
+	    foreach $metric (@avg_metrics) {
+		if (exists $scores{$flagtype}{$rulename}{$metric}) {
+		    $metrics_count++;
+		    $scores{$flagtype}{$rulename}{"AVG"}{$column} +=
+			$scores{$flagtype}{$rulename}{$metric}{$column};
+		}
+	    }
+	    if ($metrics_count > 0) {
+		$scores{$flagtype}{$rulename}{"AVG"}{$column} /= $metrics_count;
+	    }
+	}
+    }
+}
+
+print OUTFILE "flagtype\trule name\tflagtype for chart\trulename for chart\tmetric\tcount\tbetter\tworse\tequal\n";
+foreach $flagtype (sort keys %scores) {
+    $flagtypeforchart = $flagtype;
+    foreach $rulename (sort keys %{$scores{$flagtype}}) {
+	$rulenameforchart = $rulename;
+	$rulenameforchart =~ s/_/ /g;
+	foreach $metric (@output_metrics) {
 	    if (exists $scores{$flagtype}{$rulename}{$metric}) {
 		%data = %{$scores{$flagtype}{$rulename}{$metric}};
-		if ($data{'better'} == "") { $data{'better'} = "0"; }
-		if ($data{'worse'} == "") { $data{'worse'} = "0"; }
-		if ($data{'equal'} == "") { $data{'equal'} = "0"; }
-		print OUTFILE "$flagtype\t$rulename\t$metric\t$data{'count'}\t$data{'better'}\t$data{'worse'}\t$data{'equal'}\n";
+		if ($data{'count'} >= $count_threshold) {
+		    if ($rulenameforchart ne "") {
+			$rulenameforchart .= " ($data{'count'})";
+		    }
+		    if ($data{'better'} eq "") { $data{'better'} = "0"; }
+		    if ($data{'worse'} eq "") { $data{'worse'} = "0"; }
+		    if ($data{'equal'} eq "") { $data{'equal'} = "0"; }
+		    print OUTFILE "$flagtype\t$rulename\t$flagtypeforchart\t$rulenameforchart\t$metric\t$data{'count'}\t$data{'better'}\t$data{'worse'}\t$data{'equal'}\n";
+		    $flagtypeforchart = "";
+		    $rulenameforchart = "";
+		}
 	    }
 	}
     }
