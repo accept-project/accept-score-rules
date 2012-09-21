@@ -21,7 +21,7 @@ open OUTFILE, ">$outfile";
 
 my %scores;
 my @input_metrics = ('LM-EN', 'LM-DE', 'LM-FR', 'BLEU1', 'BLEU2', 'GTM1', 'GTM2', 'TER1', 'TER2', 'HUMAN');
-my @output_metrics = ('LM-EN', 'LM-DE', 'LM-FR', 'AVG', 'HUMAN');
+my @output_metrics = ('LM-EN', 'LM-DE', 'LM-FR', 'BLEU1', 'BLEU2', 'GTM1', 'GTM2', 'TER1' ,'TER2', 'AVG', 'HUMAN');
 my @avg_metrics = ('BLEU1', 'BLEU2', 'GTM1', 'GTM2', 'TER1', 'TER2');
 my $count_threshold = 13;
 

@@ -33,7 +33,7 @@ sub scoreline {
 	}
 	print "$metricname, $line\n";
 	$fhandle = $fhandles{$metricname};
-	print $fhandle "$line\n";
+	print $fhandle "$line";
 }
 
 while ($line = <INFILE>) {
