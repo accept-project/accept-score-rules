@@ -20,7 +20,7 @@ shift
 [ ! -e $infile ] && { echo "Input file does not exist" >&2 ; exit 2; }
 [ ! -e $truecasemodel ] && { echo "True case model file not found; skipping truecasing" >&2 ; export truecasemodel=""; }
 
-export tokcmd="$MOSES_DIR/scripts/tokenizer/tokenizer.perl -a -l $toklang"
+export tokcmd="$MOSES_DIR/scripts/tokenizer/tokenizer.perl -a -q -l $toklang"
 if [ ! -z $truecasemodel ] ; then
     export tccmd="$MOSES_DIR/scripts/recaser/truecase.perl --model $truecasemodel"
 else

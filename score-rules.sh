@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# The main rule scoring script.
+# The main rule scoring script, enhanced with word lattices.
 #
 # The script...
 # - runs the AutoApply client on a given input text file, creating a set
@@ -127,27 +127,38 @@ else
     mv $fname.corrected $srcC
 fi
 
+export srcL=$src.lat
+export srcLO=$srcO.lat
+export srcLC=$tgtO.lat
 
-export srctokO=$srcO.tok
-
-if [ -e $srctokO ] ; then
-    log "Skipping tokenizing and truecasing of original source language data, because $srctokO already exists"
+if [ -e $srcLO ] ; then
+    log "Skipping making lattice"
 else
-    log "Tokenizing and truecasing from $srcO to $srctokO..."
-    log "Tokenizer language: $srctoklang, truecaser model: $srctcmodel"
-
-    $frameworkdir/tokenize.sh $srcO $srctokO "$srctcmodel" "$srctoklang" |& tee -a $logfile
+    log "Making word lattice input from $srcO and $srcC"
+    perl $frameworkdir/create-lattice.perl $src $srcO $srcC $srcL $srcLO $srcLC
 fi
 
-export srctokC=$srcC.tok
 
-if [ -e $srctokC ] ; then
-    log "Skipping tokenizing and truecasing of corrected source language data, because $srctokC already exists" 
+export srctokLO=$srcLO.tok
+
+if [ -e $srctokLO ] ; then
+    log "Skipping tokenizing and truecasing of original source language data, because $srctokLO already exists"
 else
-    log "Tokenizing and truecasing from $srcC to $srctokC..."
+    log "Tokenizing and truecasing from $srcLO to $srctokLO..."
     log "Tokenizer language: $srctoklang, truecaser model: $srctcmodel"
 
-    $frameworkdir/tokenize.sh $srcC $srctokC "$srctcmodel" "$srctoklang" |& tee -a $logfile
+    perl $frameworkdir/tokenize-lattice.perl $srcLO $srctokLO "$srctcmodel" "$srctoklang" |& tee -a $logfile
+fi
+
+export srctokLC=$srcLC.tok
+
+if [ -e $srctokLC ] ; then
+    log "Skipping tokenizing and truecasing of corrected source language data, because $srctokLC already exists" 
+else
+    log "Tokenizing and truecasing from $srcLC to $srctokLC..."
+    log "Tokenizer language: $srctoklang, truecaser model: $srctcmodel"
+
+    perl $frameworkdir/tokenize-lattice.perl $srcLC $srctokLC "$srctcmodel" "$srctoklang" |& tee -a $logfile
 fi
 
 export tgtO=$bname.tgt.original
@@ -159,8 +170,8 @@ else
 	log "Translating $srcO to $tgtO using translation API at $mosesserver" 	
 	bash $frameworkdir/translate-api.sh $srcO $srctoklang $tgtO $tgttoklang $mosesserver |& tee -a $logfile
     else
-	log "Translating $srctokO to $tgtO using Moses server at $mosesserver" 
-	perl $frameworkdir/translate.pl $srctokO $tgtO $mosesserver |& tee -a $logfile
+	log "Translating $srctokLO to $tgtO using Moses server at $mosesserver" 
+	perl $frameworkdir/translate.pl $srctokLO $tgtO $mosesserver |& tee -a $logfile
     fi
 fi
 
@@ -173,8 +184,8 @@ else
 	log "Translating $srcC to $tgtC using translation API at $mosesserver" 	
 	bash $frameworkdir/translate-api.sh $srcC $srctoklang $tgtC $tgttoklang $mosesserver |& tee -a $logfile
     else
-	log "Translating $srctokC to $tgtC using Moses server at $mosesserver" 
-	perl $frameworkdir/translate.pl $srctokC $tgtC $mosesserver |& tee -a $logfile
+	log "Translating $srctokLC to $tgtC using Moses server at $mosesserver" 
+	perl $frameworkdir/translate.pl $srctokLC $tgtC $mosesserver |& tee -a $logfile
     fi
 fi
 
@@ -210,13 +221,15 @@ else
 fi
 
 
+# Note: here we assume that $srcLO contains un-marked-up segments
+
 export ref1=$bname.refs1
 if [ -e $ref1 ] ; then
     log "Skipping finding of reference translations, because $ref1 alread exists" 
 else
-    log "Writing reference translations for original segments in $srcO to $ref1" 
+    log "Writing reference translations for original segments in $srcLO to $ref1" 
     log "Using $fname and $reffile1 as parallel corpus" 
-    bash $frameworkdir/findreftrans.sh $fname $reffile1 $srcO $ref1 |& tee -a $logfile
+    bash $frameworkdir/findreftrans.sh $fname $reffile1 $srcLO $ref1 |& tee -a $logfile
 fi
 
 if [ -n $reffile2 ] ; then
@@ -225,9 +238,9 @@ if [ -n $reffile2 ] ; then
     if [ -e $ref2 ] ; then
 	log "Skipping finding of reference translations, because $ref2 alread exists" 
     else
-	log "Writing reference translations for original segments in $srcO to $ref2" 
+	log "Writing reference translations for original segments in $srcLO to $ref2" 
 	log "Using $fname and $reffile2 as parallel corpus" 
-	bash $frameworkdir/findreftrans.sh $fname $reffile2 $srcO $ref2 |& tee -a $logfile
+	bash $frameworkdir/findreftrans.sh $fname $reffile2 $srcLO $ref2 |& tee -a $logfile
     fi
 fi
 
@@ -261,9 +274,10 @@ export lmsrcS=$bname.lm-$srctoklang
 if [ -e $lmsrcS ] ; then
     log "Skipping LM scoring of source language files, since $lmsrcS already exists"
 else
-    log "LM Scoring and comparing source language file in $srctokO and $srctokC" 
-    log "Language model: $srclm" 
-    perl $frameworkdir/score-lm.pl $srctokO $srctokC $lmsrcS $srclm |& tee -a $logfile
+    log "Skipping LM scoring of source language files, since we do not know how to score a word lattice yet"
+#    log "LM Scoring and comparing source language file in $srctokLO and $srctokLC" 
+#    log "Language model: $srclm" 
+#    perl $frameworkdir/score-lm.pl $srctokLO $srctokLC $lmsrcS $srclm |& tee -a $logfile
 fi
 
 export lmtgtS=$bname.lm-$tgttoklang
@@ -316,7 +330,7 @@ else
 	export scores="$scores HUMAN $humanS"
     fi
 
-    perl $frameworkdir/adjoin.pl $summary FLAG $src SO $srcO SC $srcC TO $tgtO TC $tgtC $scores |& tee -a $logfile
+    perl $frameworkdir/adjoin.pl $summary FLAG $srcL SO $srcLO SC $srcLC TO $tgtO TC $tgtC $scores |& tee -a $logfile
 fi
 
 log "--- Creating statistics"
