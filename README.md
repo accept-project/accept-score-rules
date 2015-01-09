@@ -34,10 +34,24 @@ The script usually does not create a data file if it already exists.
 
 ## Usage
 
-The script needs the tokenizer and truecaser scripts from the
-mosesdecoder repository. The root path to the mosesdecoder repository
-is hard-coded in the script file as the variable MOSES_DIR at the
-beginning. Please change that first.
+### Prerequisites:
+
+The script needs the following additional software:
+- autoApplyClient, which needs to be requested from Acrolinx
+- BLEU scorer
+- GTM scorer
+- TER scorer
+
+Please look into the README.md files in the respective directories
+for information on how to obtain and/or compile the software.
+
+Also, the script needs the tokenizer and truecaser scripts from the
+mosesdecoder repository at https://github.com/moses-smt/mosesdecoder.
+The root path to your local mosesdecoder repository is hard-coded
+in the script file as the variable MOSES_DIR at the beginning. 
+Please change that first.
+
+
 
 ### General: 
 
